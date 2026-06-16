@@ -1,0 +1,47 @@
+name: Build Electron App
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest]
+
+    steps:
+    - name: Check out Git repository
+      uses: actions/checkout@v4
+
+    - name: Install Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+
+    - name: Install Dependencies
+      working-directory: video-compressor
+      run: npm install
+
+    - name: Build Mac App
+      if: matrix.os == 'macos-latest'
+      working-directory: video-compressor
+      run: npm run build:mac
+
+    - name: Build Windows App
+      if: matrix.os == 'windows-latest'
+      working-directory: video-compressor
+      run: npm run build:win
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: video-compressor-${{ matrix.os }}
+        path: |
+          video-compressor/dist/*.exe
+          video-compressor/dist/*.dmg
