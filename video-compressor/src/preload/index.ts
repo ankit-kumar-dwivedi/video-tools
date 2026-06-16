@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
 // Custom APIs for renderer
@@ -7,6 +7,8 @@ const api = {
   compressVideo: (options: { inputPath: string; resolution: string }) => ipcRenderer.invoke('compress-video', options),
   cancelCompression: () => ipcRenderer.invoke('cancel-compression'),
   openFolder: (folderPath: string) => ipcRenderer.send('open-folder', folderPath),
+  selectDestination: (defaultPath: string) => ipcRenderer.invoke('select-destination', defaultPath),
+  getFilePath: (file: File) => webUtils.getPathForFile(file),
   onProgress: (callback: (progress: number) => void) => {
     ipcRenderer.on('compression-progress', (_, progress) => callback(progress))
   },

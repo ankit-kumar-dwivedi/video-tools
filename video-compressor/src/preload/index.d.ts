@@ -5,10 +5,12 @@ declare global {
     electron: ElectronAPI
     api: {
       getVideoMetadata: (filePath: string) => Promise<any>
-      compressVideo: (options: { inputPath: string; resolution: string }) => Promise<string>
+      compressVideo: (options: { inputPath: string; outputPath: string; resolution: string }) => Promise<string>
       cancelCompression: () => Promise<boolean>
       openFolder: (folderPath: string) => void
-      onProgress: (callback: (progress: number) => void) => void
+      selectDestination: (defaultPath: string) => Promise<string | null>
+      getFilePath: (file: File) => string
+      onProgress: (callback: (progress: any) => void) => void
       removeProgressListener: () => void
     }
   }

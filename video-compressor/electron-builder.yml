@@ -1,5 +1,5 @@
-appId: com.electron.app
-productName: video-compressor
+appId: com.videotools.compressor
+productName: Video Compressor
 directories:
   buildResources: build
 files:
@@ -14,32 +14,29 @@ asarUnpack:
   - '**/node_modules/ffmpeg-static/**/*'
   - '**/node_modules/ffprobe-static/**/*'
 win:
-  executableName: video-compressor
+  executableName: VideoCompressor
+  target:
+    - nsis
 nsis:
-  artifactName: ${name}-${version}-setup.${ext}
-  shortcutName: ${productName}
-  uninstallDisplayName: ${productName}
+  artifactName: VideoCompressor-${version}-setup.${ext}
+  shortcutName: Video Compressor
+  uninstallDisplayName: Video Compressor
   createDesktopShortcut: always
+  oneClick: true
+  allowToChangeInstallationDirectory: false
 mac:
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
-    - NSCameraUsageDescription: Application requests access to the device's camera.
-    - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
     - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
     - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
   notarize: false
+  target:
+    - dmg
 dmg:
-  artifactName: ${name}-${version}.${ext}
+  artifactName: VideoCompressor-${version}.${ext}
 linux:
   target:
-    - AppImage
-    - snap
     - deb
-  maintainer: electronjs.org
+  maintainer: ankit-kumar-dwivedi
   category: Utility
-appImage:
-  artifactName: ${name}-${version}.${ext}
 npmRebuild: false
-publish:
-  provider: generic
-  url: https://example.com/auto-updates
