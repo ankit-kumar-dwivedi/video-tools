@@ -1,0 +1,118 @@
+name: Release Installers
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. 1.1.0)'
+        required: true
+        default: '1.1.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build-mac:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 20
+    - name: Install Dependencies
+      working-directory: video-compressor
+      run: npm install
+    - name: Build Mac DMG
+      working-directory: video-compressor
+      run: npx electron-vite build && npx electron-builder --mac --publish never
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: mac-dmg
+        path: video-compressor/dist/*.dmg
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 20
+    - name: Install Dependencies
+      working-directory: video-compressor
+      run: npm install
+    - name: Build Windows EXE
+      working-directory: video-compressor
+      run: npx electron-vite build && npx electron-builder --win --publish never
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-exe
+        path: video-compressor/dist/*.exe
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 20
+    - name: Install Dependencies
+      working-directory: video-compressor
+      run: npm install
+    - name: Build Linux DEB
+      working-directory: video-compressor
+      run: npx electron-vite build && npx electron-builder --linux --publish never
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: linux-deb
+        path: video-compressor/dist/*.deb
+
+  create-release:
+    needs: [build-mac, build-windows, build-linux]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: release-assets
+
+    - name: List downloaded files
+      run: find release-assets -type f
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: v${{ github.event.inputs.version }}
+        name: Video Compressor v${{ github.event.inputs.version }}
+        body: |
+          ## 🎬 Video Compressor v${{ github.event.inputs.version }}
+
+          Compress 8K / 4K / 2K videos offline. Fixes the **"Missing codec 0xc00d5212"** error on Windows by converting HEVC to universally compatible H.264.
+
+          ### ✨ Features
+          - 🖥️ Hardware-accelerated encoding (Apple VideoToolbox on Mac, NVENC/QSV/AMF on Windows)
+          - 📊 Real-time metadata display (resolution, codec, duration, bitrate)
+          - ⏱️ ETA and speed indicator during compression
+          - 🎯 Smart resolution options based on source video
+          - 📁 Custom destination path
+          - 🔌 Works 100% offline after installation
+
+          ### 📥 Download
+          | Platform | File |
+          |----------|------|
+          | **Windows** | `VideoCompressor-*-setup.exe` |
+          | **macOS** | `VideoCompressor-*.dmg` |
+          | **Linux** | `video-compressor_*.deb` |
+
+          ### ⚠️ Windows Note
+          Windows may show a SmartScreen warning since the app is not code-signed. Click **"More info" → "Run anyway"** to proceed.
+        draft: false
+        prerelease: false
+        files: |
+          release-assets/**/*.exe
+          release-assets/**/*.dmg
+          release-assets/**/*.deb
