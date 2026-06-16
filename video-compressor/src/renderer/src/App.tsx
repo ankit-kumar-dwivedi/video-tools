@@ -1,12 +1,17 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { UploadCloud, Video, Settings, Play, ArrowRight, CheckCircle, FolderOpen } from 'lucide-react'
+
+// Electron API
+const api = window.api
 
 function App(): React.JSX.Element {
   const [file, setFile] = useState<File | null>(null)
+  const [filePath, setFilePath] = useState<string>('')
   const [resolution, setResolution] = useState('1080p')
   const [isCompressing, setIsCompressing] = useState(false)
   const [progress, setProgress] = useState(0)
   const [isDone, setIsDone] = useState(false)
+  const [compressedPath, setCompressedPath] = useState<string>('')
   
   // Format bytes to human readable string
   const formatBytes = (bytes: number, decimals = 2) => {
@@ -25,6 +30,7 @@ function App(): React.JSX.Element {
       const droppedFile = e.dataTransfer.files[0]
       if (droppedFile.type.startsWith('video/')) {
         setFile(droppedFile)
+        setFilePath(droppedFile.path)
         setIsDone(false)
         setProgress(0)
       } else {
@@ -40,35 +46,49 @@ function App(): React.JSX.Element {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0])
+      setFilePath(e.target.files[0].path)
       setIsDone(false)
       setProgress(0)
     }
   }
 
-  const startCompression = () => {
-    if (!file) return
+  const startCompression = async () => {
+    if (!file || !filePath) return
     setIsCompressing(true)
+    setProgress(0)
     
-    // Simulate compression progress for now
-    let currentProgress = 0
-    const interval = setInterval(() => {
-      currentProgress += 5
-      setProgress(currentProgress)
-      if (currentProgress >= 100) {
-        clearInterval(interval)
-        setIsCompressing(false)
-        setIsDone(true)
-      }
-    }, 200)
+    // Listen for progress
+    api.onProgress((p) => {
+      setProgress(p)
+    })
+
+    try {
+      const outPath = await api.compressVideo({ inputPath: filePath, resolution })
+      setCompressedPath(outPath)
+      setProgress(100)
+      setIsDone(true)
+    } catch (error) {
+      alert('Error compressing video: ' + error)
+    } finally {
+      setIsCompressing(false)
+      api.removeProgressListener()
+    }
   }
 
   // Fake estimated size logic (approx 15% of original for 1080p)
+  // Later we can enhance this with actual duration/bitrate from get-video-metadata
   const getEstimatedSize = () => {
     if (!file) return '0 MB'
     let factor = 0.15
     if (resolution === '720p') factor = 0.10
     if (resolution === 'Original') factor = 0.50
     return formatBytes(file.size * factor)
+  }
+
+  const openOutputFolder = () => {
+    if (compressedPath) {
+      api.openFolder(compressedPath)
+    }
   }
 
   return (
@@ -191,16 +211,16 @@ function App(): React.JSX.Element {
             </div>
             <h2 className="text-2xl font-bold text-gray-100 mb-2">Compression Complete!</h2>
             <p className="text-gray-400 mb-8">
-              Your video was successfully compressed to <span className="text-emerald-400 font-semibold">{getEstimatedSize()}</span>
+              Your video was successfully compressed to a highly compatible format.
             </p>
             
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <button className="w-full sm:w-auto px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-xl flex items-center justify-center gap-2 transition-colors border border-gray-700">
+              <button onClick={openOutputFolder} className="w-full sm:w-auto px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-xl flex items-center justify-center gap-2 transition-colors border border-gray-700">
                 <FolderOpen className="w-4 h-4" />
                 Open Folder
               </button>
               <button 
-                onClick={() => { setFile(null); setIsDone(false); }}
+                onClick={() => { setFile(null); setIsDone(false); setCompressedPath(''); }}
                 className="w-full sm:w-auto px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-xl flex items-center justify-center gap-2 transition-colors shadow-lg shadow-indigo-500/20"
               >
                 Compress Another

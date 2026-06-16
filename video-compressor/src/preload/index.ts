@@ -1,12 +1,20 @@
-import { contextBridge } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
 // Custom APIs for renderer
-const api = {}
+const api = {
+  getVideoMetadata: (filePath: string) => ipcRenderer.invoke('get-video-metadata', filePath),
+  compressVideo: (options: { inputPath: string; resolution: string }) => ipcRenderer.invoke('compress-video', options),
+  cancelCompression: () => ipcRenderer.invoke('cancel-compression'),
+  openFolder: (folderPath: string) => ipcRenderer.send('open-folder', folderPath),
+  onProgress: (callback: (progress: number) => void) => {
+    ipcRenderer.on('compression-progress', (_, progress) => callback(progress))
+  },
+  removeProgressListener: () => {
+    ipcRenderer.removeAllListeners('compression-progress')
+  }
+}
 
-// Use `contextBridge` APIs to expose Electron APIs to
-// renderer only if context isolation is enabled, otherwise
-// just add to the DOM global.
 if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('electron', electronAPI)
