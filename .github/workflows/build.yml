@@ -23,9 +23,7 @@ jobs:
 
     - name: Build Mac DMG
       working-directory: video-compressor
-      run: npx electron-vite build && npx electron-builder --mac
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: npx electron-vite build && npx electron-builder --mac --publish never
 
     - name: Upload Mac Artifact
       uses: actions/upload-artifact@v4
@@ -50,9 +48,7 @@ jobs:
 
     - name: Build Windows EXE
       working-directory: video-compressor
-      run: npx electron-vite build && npx electron-builder --win
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: npx electron-vite build && npx electron-builder --win --publish never
 
     - name: Upload Windows Artifact
       uses: actions/upload-artifact@v4
@@ -77,9 +73,7 @@ jobs:
 
     - name: Build Linux DEB
       working-directory: video-compressor
-      run: npx electron-vite build && npx electron-builder --linux
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: npx electron-vite build && npx electron-builder --linux --publish never
 
     - name: Upload Linux Artifact
       uses: actions/upload-artifact@v4
